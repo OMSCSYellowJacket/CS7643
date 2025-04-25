@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class AutoEncoder(nn.Module):
 
-    def __init__(self, input_size=25, hidden_size=10, output_size=None rho=0.2, gamma=0.1, beta=0.1):
+    def __init__(self, input_size=25, hidden_size=10, output_size=None, rho=0.2, gamma=0.1, beta=0.1):
         """
             input_size (int): the number of features in the inputs.
             hidden_size (int): the size of the hidden layer
@@ -22,9 +22,9 @@ class AutoEncoder(nn.Module):
         self.encoder = nn.Linear(input_size, hidden_size)
         self.sigmoid = nn.Sigmoid()
         if output_size:
-            self.decoder = nn.linear(hidden_size, output_size)
+            self.decoder = nn.Linear(hidden_size, output_size)
         else:
-            self.decoder = nn.linear(hidden_size, input_size)
+            self.decoder = nn.Linear(hidden_size, input_size)
 
     def forward(self, x: torch.Tensor):
         """Assumes x is of shape (sequence, feature)"""
@@ -48,14 +48,13 @@ class AutoEncoder(nn.Module):
 
     def fit(self, x, target=None, input_size=25, hidden_size=10, epochs=10, lr=1e-4, VERBOSE=False):
         """Simple training script for """
-        model = AutoEncoder(x.size, hidden_size)
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         for e in range(epochs):
-            pred, rho_hat = model.forward(x)
+            pred, rho_hat = self.forward(x)
             if target:
-                loss = model.loss(pred, target, rho_hat)
+                loss = self.loss(pred, target, rho_hat)
             else:
-                loss = model.loss(pred, x, rho_hat)
+                loss = self.loss(pred, x, rho_hat)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
