@@ -28,10 +28,10 @@ class AutoEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor):
         """Assumes x is of shape (sequence, feature)"""
-        out = self.encoder(x)
-        out = self.sigmoid(out)
-        rho_hat = torch.mean(out, dim=0)
-        out = self.decoder(out)
+        self.hidden = self.encoder(x)
+        self.hidden = self.sigmoid(self.hidden)
+        rho_hat = torch.mean(self.hidden, dim=0)
+        out = self.decoder(self.hidden)
         return out, rho_hat
 
     def kullback_leibler_divergence(self, rho_hat):
@@ -46,7 +46,7 @@ class AutoEncoder(nn.Module):
         loss += self.beta * self.kullback_leibler_divergence(rho_hat)
         return loss
 
-    def fit(self, x, target=None, input_size=25, hidden_size=10, epochs=10, lr=1e-4, VERBOSE=False):
+    def fit(self, x, target=None, epochs=10, lr=1e-4, VERBOSE=False):
         """Simple training script for """
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         for e in range(epochs):
@@ -82,6 +82,38 @@ class StackedAutoEncoder(nn.Module):
         # layers
         self.layers = list()
 
+    def init_layers(self):
+        self.layers.append(
+            AutoEncoder(
+                input_size=self.input_size,
+                hidden_size=self.hidden_size,
+                output_size=self.input_size,
+                rho=self.rho,
+                gamma=self.gamma,
+                beta=self.beta
+            )
+        )
+        for l in range(1, self.number_layers - 1):
+            self.layers.append(
+                AutoEncoder(
+                    input_size=self.hidden_size,
+                    hidden_size=self.hidden_size,
+                    rho=self.rho,
+                    gamma=self.gamma,
+                    beta=self.beta
+                )
+            )
+        self.layers.append(
+            AutoEncoder(
+                input_size=self.hidden_size,
+                hidden_size=self.hidden_size,
+                output_size=self.input_size,
+                rho=self.rho,
+                gamma=self.gamma,
+                beta=self.beta
+            )
+        )
+
     def forward(self, x: torch.Tensor, training: bool = False):
         """Assumes x is of shape (sequence, feature)"""
         out = x
@@ -91,9 +123,8 @@ class StackedAutoEncoder(nn.Module):
             out = self.layers[-1].decoder.forward(out)
         return out
 
-    def fit(self, x, input_size=25, hidden_size=10, rho=0.2, gamma=0.1, beta=0.1, epochs=10, lr=1e-4, VERBOSE=False):
+    def fit(self, x, epochs=10, lr=1e-4, VERBOSE=False):
         """Simple training script for """
-        self.layers.append(AutoEncoder(input_size=input_size, hidden_size=hidden_size, output_size=input_size, rho=rho, gamma=gamma, beta=beta))
         if VERBOSE:
             print("Fitting Layer 1")
         self.layers[0].fit(x=x, epochs=epochs, lr=lr)
@@ -101,6 +132,5 @@ class StackedAutoEncoder(nn.Module):
             x_prime = x
             for i in range(n):
                 x_prime = self.layers[i].forward(x_prime)
-            self.layers.append(AutoEncoder(input_size=input_size, hidden_size=hidden_size, output_size=input_size, rho=rho, gamma=gamma, beta=beta))
             print("Fitting Layer", str(n))
             self.layers[n].fit(x=x_prime, target=x, epochs=epochs, lr=lr, VERBOSE=VERBOSE)
