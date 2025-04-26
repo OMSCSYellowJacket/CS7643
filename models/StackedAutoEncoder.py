@@ -1,5 +1,61 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+
+
+class SimpleAutoEncoder(nn.Module):
+
+    def __init__(self, input_size=25, hidden_size=10):
+        """
+            input_size (int): the number of features in the inputs.
+            hidden_size (int): the size of the hidden layer
+            rho (float): sparsity parameter
+            gamma (float): weight decay term
+            beta (float): sparse penalty term
+        """
+        super(SimpleAutoEncoder, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        # layers
+        self.encoder = nn.Linear(self.input_size, self.hidden_size)
+        self.hidden_1 = nn.Linear(self.hidden_size, self.hidden_size)
+        self.hidden_2 = nn.Linear(self.hidden_size, self.hidden_size)
+        self.hidden_3 = nn.Linear(self.hidden_size, self.hidden_size)
+        self.decoder = nn.Linear(self.hidden_size, self.input_size)
+        self.sigmoid = nn.Sigmoid()
+        self.batchnorm = nn.BatchNorm1d(self.hidden_size)
+
+    def forward(self, x: torch.Tensor):
+        """Assumes x is of shape (sequence, feature)"""
+        self.hidden = self.batchnorm(self.sigmoid(self.encoder(x)))
+        self.hidden = self.batchnorm(self.sigmoid(self.hidden_1(self.hidden)))
+        self.hidden = self.batchnorm(self.sigmoid(self.hidden_2(self.hidden)))
+        self.hidden = self.batchnorm(self.sigmoid(self.hidden_3(self.hidden)))
+        out = self.decoder(self.hidden)
+        return out
+
+    def fit(self, x, val=None, epochs=10, batch_size=250, lr=1e-4, VERBOSE=False):
+        """Simple training script for """
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        dataset = TensorDataset(x)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+        for e in range(epochs):
+            total_loss = 0
+            for batch in dataloader:
+                inputs = batch[0]
+                loss_fxn = nn.MSELoss()
+                pred = self.forward(inputs)
+                loss = loss_fxn(pred, inputs)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
+            if val is not None:
+                val_loss = nn.functional.mse_loss(self.forward(val), val)
+                if VERBOSE:
+                    print("Epoch", str(e), "Loss:", total_loss, "Val Loss:", val_loss)
+            elif VERBOSE:
+                print("Epoch", str(e), "Loss:", total_loss)
 
 
 class AutoEncoder(nn.Module):
@@ -40,7 +96,8 @@ class AutoEncoder(nn.Module):
 
     def loss(self, output, input, rho_hat):
         """Loss function from paper"""
-        rec_loss = nn.L1Loss(reduction='mean')
+        # rec_loss = nn.L1Loss(reduction='mean')
+        rec_loss = nn.MSELoss(reduction='mean')
         rec_loss = 0.5 * rec_loss(output, input)
         f_loss = 0.5 * self.gamma * (torch.norm(self.encoder.weight) ** 2 + torch.norm(self.decoder.weight) ** 2)
         kl_loss = self.beta * self.kullback_leibler_divergence(rho_hat)
