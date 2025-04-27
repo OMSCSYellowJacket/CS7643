@@ -15,23 +15,52 @@ class LSTM(nn.Module):
 
         self.lstm = nn.LSTM(self.input_size, self.hidden_size, self.num_layers, batch_first=True)
         self.linear_layer = nn.Linear(self.hidden_size, self.output_size)
-    
+
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).requires_grad_()
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).requires_grad_()
         out, _ = self.lstm(x, (h0.detach(), c0.detach()))
         out = self.linear_layer(out[:, -1, :]) 
         return out
-    
+
+    def fit(self, x, y, x_val=None, y_val=None, epochs=100, lr=0.05, VERBOSE=False):
+        criterion = torch.nn.MSELoss(reduction = 'mean')
+        optimiser = torch.optim.Adam(self.parameters(), lr = lr)
+        hist = np.zeros(epochs)
+        for t in range(epochs):
+            pred = self.forward(x[:, :, :])
+            loss = criterion(pred, y)
+            print("Epoch ", t, "Loss: ", loss.item())
+            hist[t] = loss.item()
+            optimiser.zero_grad()
+            loss.backward()
+            optimiser.step()
+
+
+class GRU(nn.Module):
+    def __init__(self, input_size=21, hidden_size=5, num_layers=4, output_size=1, dropout=0.2):
+        super(GRU, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.output_size = output_size
+        self.dropout = dropout
+
+        self.gru = nn.GRU(self.input_size, self.hidden_size, self.num_layers, batch_first=True)
+        self.linear_layer = nn.Linear(self.hidden_size, self.output_size)
+
+    def forward(self, x):
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).requires_grad_()
+        out, _ = self.gru(x, (h0.detach()))
+        out = self.linear_layer(out[:, -1, :]) 
+        return out
+
     def fit(self, x, y, epochs=100, lr=0.05, VERBOSE=False):
         criterion = torch.nn.MSELoss(reduction = 'mean')
         optimiser = torch.optim.Adam(self.parameters(), lr = lr)
-        if VERBOSE:
-            print(self.forward(x[:, :, :1]))
-            print(y)
         hist = np.zeros(epochs)
         for t in range(epochs):
-            pred = self.forward(x[:, :, :1])
+            pred = self.forward(x[:, :, :])
             loss = criterion(pred, y)
             print("Epoch ", t, "Loss: ", loss.item())
             hist[t] = loss.item()
