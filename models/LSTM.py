@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
 
 
 class LSTM(nn.Module):
@@ -28,7 +27,7 @@ class LSTM(nn.Module):
         optimiser = torch.optim.Adam(self.parameters(), lr = lr)
         hist = np.zeros(epochs)
         for t in range(epochs):
-            pred = self.forward(x[:, :, :])
+            pred = self.forward(x)
             loss = criterion(pred, y)
             print("Epoch ", t, "Loss: ", loss.item())
             hist[t] = loss.item()
