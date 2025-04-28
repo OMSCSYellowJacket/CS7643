@@ -23,18 +23,22 @@ class SimpleAutoEncoder(nn.Module):
         self.hidden_3 = nn.Linear(self.hidden_size, self.hidden_size)
         self.decoder = nn.Linear(self.hidden_size, self.input_size)
         self.sigmoid = nn.Sigmoid()
-        self.batchnorm = nn.BatchNorm1d(self.hidden_size)
+        self.batchnorm = nn.BatchNorm1d(self.hidden_size, affine=False)
 
     def forward(self, x: torch.Tensor):
         """Assumes x is of shape (sequence, feature)"""
-        self.hidden = self.batchnorm(self.sigmoid(self.encoder(x)))
-        self.hidden = self.batchnorm(self.sigmoid(self.hidden_1(self.hidden)))
-        self.hidden = self.batchnorm(self.sigmoid(self.hidden_2(self.hidden)))
-        self.hidden = self.batchnorm(self.sigmoid(self.hidden_3(self.hidden)))
+        # self.hidden = self.batchnorm(self.sigmoid(self.encoder(x)))
+        # self.hidden = self.batchnorm(self.sigmoid(self.hidden_1(self.hidden)))
+        # self.hidden = self.batchnorm(self.sigmoid(self.hidden_2(self.hidden)))
+        # self.hidden = self.batchnorm(self.sigmoid(self.hidden_3(self.hidden)))
+        self.hidden = self.sigmoid(self.encoder(x))
+        self.hidden = self.sigmoid(self.hidden_1(self.hidden))
+        self.hidden = self.sigmoid(self.hidden_2(self.hidden))
+        self.hidden = self.sigmoid(self.hidden_3(self.hidden))
         out = self.decoder(self.hidden)
         return out
 
-    def fit(self, x, val=None, epochs=10, batch_size=250, lr=1e-4, VERBOSE=False):
+    def fit(self, x, val=None, epochs=10, batch_size=60, lr=1e-4, VERBOSE=False):
         """Simple training script for """
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         dataset = TensorDataset(x)
