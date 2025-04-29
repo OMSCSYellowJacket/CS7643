@@ -177,9 +177,7 @@ for i_episode in range(1, N_EPISODES + 1):
     while not done:
         action = agent.act(state, eps)
         next_state, reward, done, info = train_env.step(action)
-        # Check if step returned valid data before proceeding
         if state is not None and next_state is not None:
-            # Have the agent learn:
             agent.step(state, action, reward, next_state, done)
             state = next_state
             episode_reward_sum += reward
@@ -289,7 +287,7 @@ try:
             plt.plot(
                 steps_agent,
                 final_portfolio_values_agent,
-                label=f"DQN Agent (Final: ${final_portfolio_values_agent[-1]:.2f})",
+                label=f"DQN Agent (Final portfolio value: ${final_portfolio_values_agent[-1]:.2f})",
                 linewidth=2,
             )
 
@@ -297,15 +295,15 @@ try:
             plt.plot(
                 steps_bh,
                 final_portfolio_values_bh,
-                label=f"Buy & Hold (Final: ${final_portfolio_values_bh[-1]:.2f})",
+                label=f"Buy and Hold (Final portfolio value: ${final_portfolio_values_bh[-1]:.2f})",
                 linestyle="--",
                 color="red",
             )
 
             plt.title("DQN Agent vs. Buy & Hold Performance (Test Set)")
-            plt.xlabel("Time Steps in Test Period")
-            plt.ylabel("Portfolio Value ($)")
-            plt.legend()
+            plt.xlabel("Time Steps in Test Period", fontsize=24)
+            plt.ylabel("Portfolio Value ($)", fontsize=24)
+            plt.legend(fontsize=24)
             plt.grid(True)
             plt.tight_layout()
             plt.savefig("dqn_vs_buyhold_performance_final.pdf")

@@ -10,7 +10,9 @@ from dqn import DQN
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-# Sort of based on https://github.com/udacity/deep-reinforcement-learning/blob/master/dqn/exercise/dqn_agent.py
+# Sort of based on:
+# https://github.com/xkiwilabs/DQN-using-PyTorch-and-ML-Agents/blob/master/dqn_agent.py
+# https://github.com/udacity/deep-reinforcement-learning/blob/master/dqn/exercise/dqn_agent.py
 class DQNAgent:
     """Interacts with and learns in environment."""
 
@@ -168,10 +170,11 @@ class DQNAgent:
     def update_target_network(self, hard_update=False):
         """Soft update model parameters or perform a hard copy."""
         if hard_update:
-            # print("Hard update target network")
+            # Copy weights from local to target
             self.q_network_target.load_state_dict(self.q_network_local.state_dict())
         else:
-            # print("Soft update target network")
+            # https://arxiv.org/pdf/1509.02971
+            # Use tau hyperparam to blend the two networks. This is the "soft update"
             for target_param, local_param in zip(
                 self.q_network_target.parameters(), self.q_network_local.parameters()
             ):
