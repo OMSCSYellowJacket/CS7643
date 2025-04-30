@@ -19,7 +19,7 @@ class LSTM(nn.Module):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).requires_grad_()
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).requires_grad_()
         out, _ = self.lstm(x, (h0.detach(), c0.detach()))
-        out = self.linear_layer(out[:, -1, :]) 
+        out = self.linear_layer(out[:, -1, :])
         return out
 
     def fit(self, x, y, x_val=None, y_val=None, epochs=100, lr=0.05, VERBOSE=False):
@@ -37,7 +37,7 @@ class LSTM(nn.Module):
 
 
 class GRU(nn.Module):
-    def __init__(self, input_size=21, hidden_size=5, num_layers=4, output_size=1, dropout=0.2):
+    def __init__(self, input_size=21, hidden_size=5, num_layers=1, output_size=1, dropout=0.2):
         super(GRU, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
